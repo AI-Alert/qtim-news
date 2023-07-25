@@ -1,0 +1,30 @@
+version: '2.3'
+
+services:
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env
+    command: yarn start:dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - cache
+  cache:
+    container_name: Qtim-redis
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '127.0.0.1:0:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - cache:/data
+
+volumes:
+  cache:
