@@ -9,7 +9,6 @@ import {
   MaxLength,
   MinLength
 } from "class-validator";
-import {Transform} from "class-transformer";
 import {ApiProperty, PartialType} from "@nestjs/swagger";
 import {NewsEntity} from "@src/entities";
 import {NewsImportanceStatuses} from "@shared/enums";
@@ -52,6 +51,7 @@ export class CreateNewsDto {
 }
 
 export class UpdateNewsDto extends PartialType(CreateNewsDto) {
+  news: NewsEntity;
 }
 
 export class ListNewsResponseDto {

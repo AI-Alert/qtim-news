@@ -11,11 +11,10 @@ import {
   Delete, Get,
   HttpCode,
   HttpStatus,
-  NotFoundException,
   Param, Patch,
   Post, Query,
   Request,
-  UseGuards
+  UseGuards, UseInterceptors
 } from "@nestjs/common";
 import {NewsCrudService} from "@src/news/crud/services";
 import {UserCrudService} from "@src/user/crud/services";
@@ -25,6 +24,7 @@ import {CreateNewsDto, ListNewsResponseDto, NewsParams, UpdateNewsDto} from "@sr
 import {PaginationQuery} from "@shared/dto";
 import {FindOptionsWhere} from "typeorm";
 import {NewsStatuses} from "@shared/enums";
+import {NewsCheckInterceptor} from "@src/news/crud/interceptors";
 
 export const EXAMPLE_NEWS = {
   id: '123',
@@ -67,9 +67,8 @@ export class NewsCrudController {
   async createNews(
     @Body() createNewsDto: CreateNewsDto, @Request() req: any,
   ): Promise<NewsEntity> {
-    const currentUser = await this._userCrudService.findById(req.user.id);
     return this._crudService.create(
-      currentUser,
+      req.user,
       createNewsDto,
     );
   }
@@ -77,6 +76,7 @@ export class NewsCrudController {
   @Post('/:id/like')
   @UseGuards(JwtAuthUserGuardRedis)
   @ApiBearerAuth()
+  @UseInterceptors(NewsCheckInterceptor)
   @ApiOperation({
     summary: "Like post by Id",
   })
@@ -90,14 +90,13 @@ export class NewsCrudController {
     },
   })
   @HttpCode(HttpStatus.OK)
-  async likeNews(@Param() params: NewsParams, @Request() req: any ): Promise<LikedNewsEntity> {
-    const news = await this._crudService.findById(+params.id);
-    const currentUser = await this._userCrudService.findById(req.user.id);
-    return await this._crudService.likeNews(news, currentUser);
+  async likeNews(@Request() req: any ): Promise<LikedNewsEntity> {
+    return await this._crudService.likeNews(req.body, req.user.id);
   }
 
   @Delete('/:id/unlike')
   @UseGuards(JwtAuthUserGuardRedis)
+  @UseInterceptors(NewsCheckInterceptor)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Unlike post by Id",
@@ -112,13 +111,8 @@ export class NewsCrudController {
     },
   })
   @HttpCode(HttpStatus.OK)
-  async unlikeNews(@Param() params: NewsParams, @Request() req: any ): Promise<LikedNewsEntity> {
-    const news = await this._crudService.findById(+params.id);
-    if (!news) {
-      throw new NotFoundException('News not found');
-    }
-    const currentUser = await this._userCrudService.findById(req.user.id);
-    return await this._crudService.unLikeNews(news.id, currentUser.id);
+  async unlikeNews(@Request() req: any ): Promise<LikedNewsEntity> {
+    return await this._crudService.unLikeNews(req.body.news.id, req.user.id);
   }
 
   @Patch(':id')
@@ -149,6 +143,7 @@ export class NewsCrudController {
     },
   })
   @HttpCode(HttpStatus.OK)
+  @UseInterceptors(NewsCheckInterceptor)
   async updateNews(
     @Param() params: NewsParams,
     @Body() updateNewsDto: UpdateNewsDto,
@@ -175,11 +170,14 @@ export class NewsCrudController {
     },
   })
   @HttpCode(HttpStatus.OK)
+  @UseInterceptors(NewsCheckInterceptor)
   async archiveNews(
     @Param() params: NewsParams,
+    @Body() body: NewsEntity,
   ): Promise<NewsEntity> {
     return this._crudService.archive(
       +params.id,
+      body
     );
   }
 
@@ -275,7 +273,6 @@ export class NewsCrudController {
   })
   @HttpCode(HttpStatus.OK)
   async deleteNews(@Param() params: NewsParams, @Request() req: any ): Promise<LikedNewsEntity> {
-    const currentUser = await this._userCrudService.findById(req.user.id);
-    return await this._crudService.softDelete(+params.id, currentUser);
+    return await this._crudService.softDelete(+params.id, req.user.id);
   }
 }

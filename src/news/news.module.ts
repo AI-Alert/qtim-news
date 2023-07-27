@@ -6,6 +6,7 @@ import {ConfigModule, ConfigService} from "@nestjs/config";
 import {NewsCrudController} from "@src/news/crud/controllers";
 import {NewsCrudService} from "@src/news/crud/services";
 import {UserModule} from "@src/user/user.module";
+import {NewsCheckInterceptor} from "@src/news/crud/interceptors";
 
 @Module({
   imports: [
@@ -25,6 +26,6 @@ import {UserModule} from "@src/user/user.module";
     UserModule,
   ],
   controllers: [NewsCrudController],
-  providers: [NewsCrudService],
+  providers: [NewsCrudService, NewsCheckInterceptor],
 })
 export class NewsModule {}

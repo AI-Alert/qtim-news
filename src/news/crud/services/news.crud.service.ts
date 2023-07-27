@@ -2,7 +2,7 @@ import {BadRequestException, Injectable, NotFoundException} from "@nestjs/common
 import {LikedNewsEntity, NewsEntity, UserEntity} from "@src/entities";
 import {InjectRepository} from "@nestjs/typeorm";
 import {FindOptionsWhere, Repository} from "typeorm";
-import {ListNewsResponseDto, UpdateNewsDto} from "@src/news/crud/dto";
+import {CreateNewsDto, ListNewsResponseDto, UpdateNewsDto} from "@src/news/crud/dto";
 import {NewsStatuses} from "@shared/enums";
 
 @Injectable()
@@ -15,7 +15,7 @@ export class NewsCrudService {
   ) {
   }
 
-  async create(user: UserEntity, updateNewsDto: UpdateNewsDto): Promise<NewsEntity> {
+  async create(user: UserEntity, updateNewsDto: CreateNewsDto): Promise<NewsEntity> {
     const newNews = new NewsEntity();
     newNews.status = NewsStatuses.active;
     newNews.author = user;
@@ -58,20 +58,12 @@ export class NewsCrudService {
   }
 
   async update(id: number, updateNewsDto: UpdateNewsDto): Promise<NewsEntity> {
-    const news = await this._newsRepository.findOneBy( {id} );
-    if (!news) throw new NotFoundException('News Not Found');
-
-    this._newsRepository.merge(news, updateNewsDto);
-
+    const news = this._newsRepository.merge(updateNewsDto.news, updateNewsDto );
     return this._newsRepository.save(news);
   }
 
-  async archive(id: number): Promise<NewsEntity> {
-    const news = await this._newsRepository.findOneBy( {id} );
-    if (!news) throw new NotFoundException('News Not Found');
-
+  async archive(id: number, news: NewsEntity): Promise<NewsEntity> {
     this._newsRepository.merge(news, { status: NewsStatuses.archieved });
-
     return this._newsRepository.save(news);
   }
 
