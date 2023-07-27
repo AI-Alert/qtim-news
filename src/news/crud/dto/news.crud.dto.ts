@@ -51,6 +51,7 @@ export class CreateNewsDto {
 }
 
 export class UpdateNewsDto extends PartialType(CreateNewsDto) {
+  @IsOptional()
   news: NewsEntity;
 }
 
